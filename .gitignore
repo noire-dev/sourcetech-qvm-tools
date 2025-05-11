@@ -5,3 +5,5 @@ build/cpp.exe
 build/cpp
 build/asm.exe
 build/asm
+build/rcc
+build/rcc.exe
