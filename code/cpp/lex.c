@@ -575,8 +575,7 @@ setsource(char *name, int fd, char *str)
 		len = strlen(str);
 		s->inb = domalloc(len+4);
 		s->inp = s->inb;
-		memcpy((char *)s->inp, str, len);
-		s->inp[len] = '\0';
+		strncpy((char *)s->inp, str, len);
 	} else {
 		s->inb = domalloc(INS+4);
 		s->inp = s->inb;
