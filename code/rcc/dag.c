@@ -434,17 +434,6 @@ void gencode(Symbol caller[], Symbol callee[]) {
 		codelist->next = cp;
 		cp->prev = codelist;
 	}
-	if (glevel && IR->stabsym) {
-		int i;
-		Symbol p, q;
-		for (i = 0; (p = callee[i]) != NULL
-		         && (q = caller[i]) != NULL; i++) {
-			(*IR->stabsym)(p);
-			if (p->sclass != q->sclass || p->type != q->type)
-				(*IR->stabsym)(q);
-		}
-		swtoseg(CODE);
-	}
 	cp = codehead.next;
 	for ( ; errcnt <= 0 && cp; cp = cp->next)
 		switch (cp->kind) {
@@ -456,7 +445,6 @@ void gencode(Symbol caller[], Symbol callee[]) {
 			       	for ( ; *p; p++)
 			       		if ((*p)->ref != 0.0)
 			       			(*IR->local)(*p);
-			       		else if (glevel) (*IR->local)(*p);
 			       }
  break;
 		case Blockend: (*IR->blockend)(&cp->u.begin->u.block.x); break;
@@ -501,30 +489,14 @@ void emitcode(void) {
 	for ( ; errcnt <= 0 && cp; cp = cp->next)
 		switch (cp->kind) {
 		case Address: break;
-		case Blockbeg: if (glevel && IR->stabblock) {
-			       	(*IR->stabblock)('{',  cp->u.block.level - LOCAL, cp->u.block.locals);
-			       	swtoseg(CODE);
-			       }
- break;
-		case Blockend: if (glevel && IR->stabblock) {
-			       	Code bp = cp->u.begin;
-			       	foreach(bp->u.block.identifiers, bp->u.block.level, typestab, NULL);
-			       	foreach(bp->u.block.types,       bp->u.block.level, typestab, NULL);
-			       	(*IR->stabblock)('}', bp->u.block.level - LOCAL, bp->u.block.locals);
-			       	swtoseg(CODE);
-			       }
- break;
-		case Defpoint: src = cp->u.point.src;
-			       if (glevel > 0 && IR->stabline) {
-			       	(*IR->stabline)(&cp->u.point.src); swtoseg(CODE); } break;
+		case Blockbeg: break;
+		case Blockend: break;
+		case Defpoint: src = cp->u.point.src; break;
 		case Gen: case Jump:
 		case Label:    if (cp->u.forest)
 			       	(*IR->emit)(cp->u.forest); break;
-		case Local:    if (glevel && IR->stabsym) {
-			       	(*IR->stabsym)(cp->u.var);
-			       	swtoseg(CODE);
-			       } break;
-		case Switch:   {	int i;
+		case Local: break;
+		case Switch: { int i;
 			       	defglobal(cp->u.swtch.table, LIT);
 			       	(*IR->defaddress)(equated(cp->u.swtch.labels[0]));
 			       	for (i = 1; i < cp->u.swtch.size; i++) {

@@ -141,8 +141,6 @@ static Tree unary(void) {
 						  && (isfunc(p->type->type) || isarray(p->type->type)))
 						  	p = retype(p, p->type->type);
 						  else {
-						  	if (YYnull)
-						  		p = nullcheck(p);
 						  	p = rvalue(p);
 						  } break;
 	case '&':    t = gettok(); p = unary(); if (isarray(p->type) || isfunc(p->type))
@@ -278,12 +276,6 @@ static Tree postfix(Tree p) {
 			    	Tree q;
 			    	t = gettok();
 			    	q = expr(']');
-			    	if (YYnull) {
-			    		if (isptr(p->type))
-			    			p = nullcheck(p);
-			    		else if (isptr(q->type))
-			    			q = nullcheck(q);
-			    	}
 			    	p = (*optree['+'])(ADD, pointer(p), pointer(q));
 			    	if (isptr(p->type) && isarray(p->type->type))
 			    		p = retype(p, p->type->type);
@@ -323,8 +315,6 @@ static Tree postfix(Tree p) {
 			    p = pointer(p);
 			    if (t == ID) {
 			    	if (isptr(p->type) && isstruct(p->type->type)) {
-			    		if (YYnull)
-			    			p = nullcheck(p);
 			    		p = field(p, token);
 			    	} else
 			    		error("left operand of -> has incompatible type `%t'\n", p->type);
@@ -384,12 +374,8 @@ static Tree primary(void) {
 						addlocal(p);
 				}
 				t = gettok();
-				if (xref)
-					use(p, src);
 				return idtree(p);
 			}
-		   if (xref)
-		   	use(tsym, src);
 		   if (tsym->sclass == ENUM)
 		   	p = consttree(tsym->u.value, inttype);
 		   else {
@@ -656,9 +642,6 @@ Tree field(Tree p, const char *name) {
 				ty = qual(VOLATILE, ty);
 			ty = ptr(ty);
 		}
-		if (YYcheck && !isaddrop(p->op) && q->offset > 0)	/* omit */
-			p = nullcall(ty, YYcheck, p, consttree(q->offset, inttype));	/* omit */
-		else					/* omit */
 		p = simplify(ADD+P, ty, p, consttree(q->offset, inttype));
 
 		if (q->lsb) {
@@ -680,21 +663,6 @@ char *funcname(Tree f) {
 	return "a function";
 }
 static Tree nullcheck(Tree p) {
-	if (!needconst && YYnull && isptr(p->type)) {
-		p = value(p);
-		if (strcmp(YYnull->name, "_YYnull") == 0) {
-			Symbol t1 = temporary(REGISTER, voidptype);
-			p = tree(RIGHT, p->type,
-				tree(OR, voidtype,
-					cond(asgn(t1, cast(p, voidptype))),
-					vcall(YYnull, voidtype,	(file && *file ? pointer(idtree(mkstr(file)->u.c.loc)) : cnsttree(voidptype, NULL)), cnsttree(inttype, (long)lineno)		, NULL)),
-				idtree(t1));
-		}
-
-		else
-			p = nullcall(p->type, YYnull, p, cnsttree(inttype, 0L));
-
-	}
 	return p;
 }
 Tree nullcall(Type pty, Symbol f, Tree p, Tree e) {

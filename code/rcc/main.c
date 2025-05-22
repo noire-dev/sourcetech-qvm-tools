@@ -9,11 +9,6 @@ static void stabend(Coordinate *, Symbol, Coordinate **, Symbol *, Symbol *);
 Interface *IR = NULL;
 
 int Aflag;		/* >= 0 if -A specified */
-int Pflag;		/* != 0 if -P specified */
-int glevel;		/* == [0-9] if -g[0-9] specified */
-int xref;		/* != 0 for cross-reference data */
-Symbol YYnull;		/* _YYnull  symbol if -n or -nvalidate specified */
-Symbol YYcheck;		/* _YYcheck symbol if -nvalidate,check specified */
 
 static char *comment;
 static Interface stabIR;
@@ -50,27 +45,10 @@ int main(int argc, char *argv[]) {
 	init(argc, argv);
 	t = gettok();
 	(*IR->progbeg)(argc, argv);
-	if (glevel && IR->stabinit)
-		(*IR->stabinit)(firstfile, argc, argv);
 	program();
 	if (events.end)
 		apply(events.end, NULL, NULL);
 	memset(&events, 0, sizeof events);
-	if (glevel || xref) {
-		Symbol symroot = NULL;
-		Coordinate src;
-		foreach(types,       GLOBAL, typestab, &symroot);
-		foreach(identifiers, GLOBAL, typestab, &symroot);
-		src.file = firstfile;
-		src.x = 0;
-		src.y = lineno;
-		if ((glevel > 2 || xref) && IR->stabend)
-			(*IR->stabend)(&src, symroot,
-				ltov(&loci,    PERM),
-				ltov(&symbols, PERM), NULL);
-		else if (IR->stabend)
-			(*IR->stabend)(&src, NULL, NULL, NULL, NULL);
-	}
 	finalize();
 	(*IR->progend)();
 	deallocate(PERM);
@@ -87,52 +65,11 @@ void main_init(int argc, char *argv[]) {
 	inited = 1;
 	type_init(argc, argv);
 	for (i = 1; i < argc; i++)
-		if (strcmp(argv[i], "-g") == 0 || strcmp(argv[i], "-g2") == 0)
-			glevel = 2;
-		else if (strncmp(argv[i], "-g", 2) == 0) {	/* -gn[,x] */
-			char *p = strchr(argv[i], ',');
-			glevel = atoi(argv[i]+2);
-			if (p) {
-				comment = p + 1;
-				if (glevel == 0)
-					glevel = 1;
-				if (stabIR.stabline == NULL) {
-					stabIR.stabline = IR->stabline;
-					stabIR.stabend = IR->stabend;
-					IR->stabline = stabline;
-					IR->stabend = stabend;
-				}
-			}	
-		} else if (strcmp(argv[i], "-x") == 0)
-			xref++;
-		else if (strcmp(argv[i], "-A") == 0) {
+		if (strcmp(argv[i], "-A") == 0)
 			++Aflag;
-		} else if (strcmp(argv[i], "-P") == 0)
-			Pflag++;
 		else if (strcmp(argv[i], "-w") == 0)
 			wflag++;
-		else if (strcmp(argv[i], "-n") == 0) {
-			if (!YYnull) {
-				YYnull = install(string("_YYnull"), &globals, GLOBAL, PERM);
-				YYnull->type = func(voidptype, NULL, 1);
-				YYnull->sclass = EXTERN;
-				(*IR->defsymbol)(YYnull);
-			}
-		} else if (strncmp(argv[i], "-n", 2) == 0) {	/* -nvalid[,check] */
-			char *p = strchr(argv[i], ',');
-			if (p) {
-				YYcheck = install(string(p+1), &globals, GLOBAL, PERM);
-				YYcheck->type = func(voidptype, NULL, 1);
-				YYcheck->sclass = EXTERN;
-				(*IR->defsymbol)(YYcheck);
-				p = stringn(argv[i]+2, p - (argv[i]+2));
-			} else
-				p = string(argv[i]+2);
-			YYnull = install(p, &globals, GLOBAL, PERM);
-			YYnull->type = func(voidptype, NULL, 1);
-			YYnull->sclass = EXTERN;
-			(*IR->defsymbol)(YYnull);
-		} else if (strcmp(argv[i], "-v") == 0)
+		else if (strcmp(argv[i], "-v") == 0)
 			fprint(stderr, "%s %s\n", argv[0], rcsid);
 		else if (strncmp(argv[i], "-s", 2) == 0)
 			density = strtod(&argv[i][2], NULL);

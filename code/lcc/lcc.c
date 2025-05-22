@@ -52,10 +52,7 @@ extern char *strsave(const char *);
 extern char *stringf(const char *, ...);
 extern int suffix(char *, char *[], int);
 extern char *tempname(char *);
-
-#ifndef __sun
 extern int getpid(void);
-#endif
 
 extern char *cpp[], *include[], *com[], *as[],*ld[], inputs[], *suffixes[];
 extern int option(char *);
@@ -284,9 +281,7 @@ static int spawn(const char *cmdname, char **argv) {
 #else
 
 #define _P_WAIT 0
-#ifndef __sun
 extern int fork(void);
-#endif
 extern int wait(int *);
 
 static int spawn(const char *cmdname, char **argv) {
@@ -540,40 +535,12 @@ static List find(char *str, List list) {
 static void help(void) {
 	static char *msgs[] = {
 "", " [ option | file ]...\n",
-"	except for -l, options are processed left-to-right before files\n",
-"	unrecognized options are taken to be linker options\n",
-"-A	warn about nonANSI usage; 2nd -A warns more\n",
-"-b	emit expression-level profiling code; see bprint(1)\n",
-#ifdef sparc
-"-Bstatic -Bdynamic	specify static or dynamic libraries\n",
-#endif
-"-Bdir/	use the compiler named `dir/rcc'\n",
-"-c	compile only\n",
-"-dn	set switch statement density to `n'\n",
-"-Dname -Dname=def	define the preprocessor symbol `name'\n",
-"-E	run only the preprocessor on the named C programs and unsuffixed files\n",
-"-g	produce symbol table information for debuggers\n",
-"-help or -?	print this message\n",
-"-Idir	add `dir' to the beginning of the list of #include directories\n",	
-"-lx	search library `x'\n",
-"-N	do not search the standard directories for #include files\n",
-"-n	emit code to check for dereferencing zero pointers\n",
-"-O	is ignored\n",
-"-o file	leave the output in `file'\n",
-"-P	print ANSI-style declarations for globals\n",
-"-p -pg	emit profiling code; see prof(1) and gprof(1)\n",
-"-S	compile to assembly language\n",
-#ifdef linux
-"-static	specify static libraries (default is dynamic)\n",
-#endif
-"-t -tname	emit function tracing calls to printf or to `name'\n",
-"-target name	is ignored\n",
-"-tempdir=dir	place temporary files in `dir/'", "\n"
-"-Uname	undefine the preprocessor symbol `name'\n",
-"-v	show commands as they are executed; 2nd -v suppresses execution\n",
-"-w	suppress warnings\n",
-"-Woarg	specify system-specific `arg'\n",
-"-W[pfal]arg	pass `arg' to the preprocessor, compiler, assembler, or linker\n",
+"-h = print this message\n",
+"-I = add `dir' to the beginning of the list of #include directories\n",	
+"-D = -Dname=def define the preprocessor symbol `name'\n",
+"-A	= warn about nonANSI; 2nd -A warns more\n",
+"-S	= compile to asm\n",
+"-w	= no warnings\n",
 	0 };
 	int i;
 	char *s;
@@ -621,132 +588,22 @@ static void interrupt(int n) {
 /* opt - process option in arg */
 static void opt(char *arg) {
 	switch (arg[1]) {	/* multi-character options */
-	case 'W':	/* -Wxarg */
-		if (arg[2] && arg[3])
-			switch (arg[2]) {
-			case 'o':
-				if (option(&arg[3]))
-					return;
-				break;
-			case 'p':
-				plist = append(&arg[3], plist);
-				return;
-			case 'f':
-				if (strcmp(&arg[3], "-C") || option("-b")) {
-					clist = append(&arg[3], clist);
-					return;
-				}
-				break; /* and fall through */
-			case 'a':
-				alist = append(&arg[3], alist);
-				return;
-			case 'l':
-				llist[0] = append(&arg[3], llist[0]);
-				return;
-			}
-		fprintf(stderr, "%s: %s ignored\n", progname, arg);
-		return;
-	case 'd':	/* -dn */
-		arg[1] = 's';
-		clist = append(arg, clist);
-		return;
-	case 't':	/* -t -tname -tempdir=dir */
-		if (strncmp(arg, "-tempdir=", 9) == 0)
-			tempdir = arg + 9;
-		else
-			clist = append(arg, clist);
-		return;
-	case 'p':	/* -p -pg */
-		if (option(arg))
-			clist = append(arg, clist);
-		else
-			fprintf(stderr, "%s: %s ignored\n", progname, arg);
-		return;
 	case 'D':	/* -Dname -Dname=def */
-	case 'U':	/* -Uname */
 	case 'I':	/* -Idir */
 		plist = append(arg, plist);
-		return;
-	case 'B':	/* -Bdir -Bstatic -Bdynamic */
-#ifdef sparc
-		if (strcmp(arg, "-Bstatic") == 0 || strcmp(arg, "-Bdynamic") == 0)
-			llist[1] = append(arg, llist[1]);
-		else
-#endif	
-		{
-		static char *path;
-		if (path)
-			error("-B overwrites earlier option", 0);
-		path = arg + 2;
-		if (strstr(com[1], "win32") != NULL)
-			com[0] = concat(replace(path, '/', '\\'), concat("rcc", first(suffixes[4])));
-		else
-			com[0] = concat(path, "rcc");
-		if (path[0] == 0)
-			error("missing directory in -B option", 0);
-		}
 		return;
 	case 'h':
 		if (strcmp(arg, "-help") == 0) {
 			static int printed = 0;
-	case '?':
-			if (!printed)
-				help();
-			printed = 1;
-			return;
-		}
-#ifdef linux
-	case 's':
-		if (strcmp(arg,"-static") == 0) {
-			if (!option(arg))
-				fprintf(stderr, "%s: %s ignored\n", progname, arg);
-			return;
-		}
-#endif         
+		}       
 	}
 	if (arg[2] == 0)
 		switch (arg[1]) {	/* single-character options */
 		case 'S':
 			Sflag++;
 			return;
-		case 'O':
-			fprintf(stderr, "%s: %s ignored\n", progname, arg);
-			return;
-		case 'A': case 'n': case 'w': case 'P':
+		case 'A': case 'w':
 			clist = append(arg, clist);
-			return;
-		case 'g': case 'b':
-			if (option(arg))
-				clist = append(arg[1] == 'g' ? "-g2" : arg, clist);
-			else
-				fprintf(stderr, "%s: %s ignored\n", progname, arg);
-			return;
-		case 'G':
-			if (option(arg)) {
-				clist = append("-g3", clist);
-				llist[0] = append("-N", llist[0]);
-			} else
-				fprintf(stderr, "%s: %s ignored\n", progname, arg);
-			return;
-		case 'E':
-			Eflag++;
-			return;
-		case 'c':
-			cflag++;
-			return;
-		case 'N':
-			if (strcmp(basename(cpp[0]), "gcc-cpp") == 0)
-				plist = append("-nostdinc", plist);
-			include[0] = 0;
-			ilist = 0;
-			return;
-		case 'v':
-			if (verbose++ == 0) {
-				if (strcmp(basename(cpp[0]), "gcc-cpp") == 0)
-					plist = append(arg, plist);
-				clist = append(arg, clist);
-				fprintf(stderr, "%s %s\n", progname, rcsid);
-			}
 			return;
 		}
 	if (cflag || Sflag || Eflag)

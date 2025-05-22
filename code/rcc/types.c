@@ -302,11 +302,6 @@ Field newfield(char *name, Type ty, Type fty) {
 	*q = p;
 	p->name = name;
 	p->type = fty;
-	if (xref) {							/* omit */
-		if (ty->u.sym->u.s.ftab == NULL)			/* omit */
-			ty->u.sym->u.s.ftab = table(NULL, level);	/* omit */
-		install(name, &ty->u.sym->u.s.ftab, 0, PERM)->src = src;/* omit */
-	}								/* omit */
 	return p;
 }
 int eqtype(Type ty1, Type ty2, int ret) {
@@ -501,14 +496,6 @@ Field fieldlist(Type ty) {
 /* fieldref - find field name of type ty, return entry */
 Field fieldref(const char *name, Type ty) {
 	Field p = isfield(name, unqual(ty)->u.sym->u.s.flist);
-
-	if (p && xref) {
-		Symbol q;
-		assert(unqual(ty)->u.sym->u.s.ftab);
-		q = lookup(name, unqual(ty)->u.sym->u.s.ftab);
-		assert(q);
-		use(q, src);
-	}
 	return p;
 }
 

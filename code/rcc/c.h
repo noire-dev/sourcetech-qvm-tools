@@ -502,11 +502,6 @@ extern char *token;
 extern Symbol tsym;
 extern Coordinate src;
 extern int Aflag;
-extern int Pflag;
-extern Symbol YYnull;
-extern Symbol YYcheck;
-extern int glevel;
-extern int xref;
 
 extern int ncalled;
 extern int npoints;

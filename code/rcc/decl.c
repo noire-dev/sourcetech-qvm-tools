@@ -38,7 +38,6 @@ void program(void) {
 		|| t == ID || t == '*' || t == '(') {
 			decl(dclglobal);
 			deallocate(STMT);
-			if (!(glevel >= 3 || xref))
 			deallocate(FUNC);
 		} else if (t == ';') {
 			warning("empty declaration\n");
@@ -255,8 +254,6 @@ static Symbol dclglobal(int sclass, char *id, Type ty, Coordinate *pos) {
 		initializer(p->type, 0);
 	} else if (t == '=') {
 		initglobal(p, 0);
-		if (glevel > 0 && IR->stabsym) {
-			(*IR->stabsym)(p); swtoseg(p->u.seg); }
 	} else if (p->sclass == STATIC && !isfunc(p->type)
 	&& p->type->size == 0)
 		error("undefined size for `%t %s'\n", p->type, p->name);
@@ -536,20 +533,15 @@ static Type structdcl(int op) {
 		else
 			error("invalid %k field declarations\n", op);
 		test('}', stop);
-	}
-	else if (*tag && (p = lookup(tag, types)) != NULL
-	&& p->type->op == op) {
+	} else if (*tag && (p = lookup(tag, types)) != NULL && p->type->op == op) {
 		ty = p->type;
 		if (t == ';' && p->scope < level)
 			ty = newstruct(op, tag);
-	}
-	else {
+	} else {
 		if (*tag == 0)
 			error("missing %k tag\n", op);
 		ty = newstruct(op, tag);
 	}
-	if (*tag && xref)
-		use(ty->u.sym, pos);
 	return ty;
 }
 static void fields(Type ty) {
@@ -751,10 +743,6 @@ static void funcdefn(int sclass, char *id, Type ty, Symbol params[], Coordinate 
 	cfunc->u.f.callee = callee;
 	cfunc->u.f.pt = src;
 	cfunc->defined = 1;
-	if (xref)
-		use(cfunc, cfunc->src);
-	if (Pflag)
-		printproto(cfunc, cfunc->u.f.callee);
 	if (ncalled >= 0)
 		ncalled = findfunc(cfunc->name, pt.file);
 	labels   = table(NULL, LABELS);
@@ -805,15 +793,11 @@ static void funcdefn(int sclass, char *id, Type ty, Symbol params[], Coordinate 
 				callee[i]->type = ptr(callee[i]->type);
 				caller[i]->structarg = callee[i]->structarg = 1;
 			}
-	if (glevel > 1)	for (i = 0; callee[i]; i++) callee[i]->sclass = AUTO;
 	if (cfunc->sclass != STATIC)
 		(*IR->export)(cfunc);
-	if (glevel && IR->stabsym) {
-		swtoseg(CODE); (*IR->stabsym)(cfunc); }
 	swtoseg(CODE);
 	(*IR->function)(cfunc, caller, callee, cfunc->u.f.ncalls);
-	if (glevel && IR->stabfend)
-		(*IR->stabfend)(cfunc, lineno);
+
 	foreach(stmtlabs, LABELS, checklab, NULL);
 	exitscope();
 	expect('}');
@@ -896,7 +880,7 @@ static void checkref(Symbol p, void *cl) {
 	if (p->scope >= PARAM
 	&& (isvolatile(p->type) || isfunc(p->type)))
 		p->addressed = 1;
-	if (Aflag >= 2 && p->defined && p->ref == 0) {
+	if (p->defined && p->ref == 0) {
 		if (p->sclass == STATIC)
 			warning("static `%t %s' is not referenced\n",
 				p->type, p->name);
@@ -1028,8 +1012,7 @@ static void doextern(Symbol p, void *cl) {
 	(*IR->import)(p);
 }
 static void doglobal(Symbol p, void *cl) {
-	if (!p->defined && (p->sclass == EXTERN
-	|| (isfunc(p->type) && p->sclass == AUTO)))
+	if (!p->defined && (p->sclass == EXTERN || (isfunc(p->type) && p->sclass == AUTO)))
 		(*IR->import)(p);
 	else if (!p->defined && !isfunc(p->type)
 	&& (p->sclass == AUTO || p->sclass == STATIC)) {
@@ -1039,17 +1022,11 @@ static void doglobal(Symbol p, void *cl) {
 		if (p->type->size > 0) {
 			defglobal(p, BSS);
 			(*IR->space)(p->type->size);
-			if (glevel > 0 && IR->stabsym)
-				(*IR->stabsym)(p);
 		} else
 			error("undefined size for `%t %s'\n",
 				p->type, p->name);
 		p->defined = 1;
 	}
-	if (Pflag
-	&& !isfunc(p->type)
-	&& !p->generated && p->sclass != EXTERN)
-		printdecl(p, p->type);
 }
 void doconst(Symbol p, void *cl) {
 	if (p->u.c.loc) {
@@ -1144,8 +1121,6 @@ Type enumdcl(void) {
 		ty = newstruct(ENUM, tag);
 		ty->type = inttype;
 	}
-	if (*tag && xref)
-		use(p, pos);
 	return ty;
 }
 

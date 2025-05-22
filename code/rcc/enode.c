@@ -165,8 +165,6 @@ static Tree addtree(int op, Tree l, Tree r) {
 			l = cast(l, promote(l->type));
 			if (n > 1)
 				l = multree(MUL, cnsttree(signedptr, n), l);
-			if (YYcheck && !isaddrop(r->op))		/* omit */
-				return nullcall(ty, YYcheck, r, l);	/* omit */
 			return simplify(ADD, ty, l, r);
 		}
 

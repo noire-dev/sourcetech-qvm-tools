@@ -65,7 +65,6 @@ void definept(Coordinate *p) {
 		if (n > 0)
 			refinc = (float)n/ncalled;
 	}
-	if (glevel > 2)	locus(identifiers, &cp->u.point.src);
 	if (events.points && reachable(Gen))
 		{
 			Tree e = NULL;
@@ -201,7 +200,6 @@ void statement(int loop, Swtch swp, int lev) {
 		       	listnodes(e, 0, 0);
 		       	if (nodecount == 0 || nodecount > 200)
 		       		walk(NULL, 0, 0);
-		       	else if (glevel) walk(NULL, 0, 0);
 		       	deallocate(STMT);
 		       } expect(';');
 						break;
