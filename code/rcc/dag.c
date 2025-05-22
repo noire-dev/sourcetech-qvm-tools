@@ -31,7 +31,6 @@ static void printdag1(Node, int, int);
 static void printnode(Node, int, int);
 static void reset(void);
 static Node tmpnode(Node);
-static void typestab(Symbol, void *);
 static Node undag(Node);
 static Node visit(Node, int);
 static void unlist(void);
@@ -697,12 +696,3 @@ static void printnode(Node p, int fd, int lev) {
 		fprint(f, "\n");
 	}
 }
-
-/* typestab - emit stab entries for p */
-static void typestab(Symbol p, void *cl) {
-	if (!isfunc(p->type) && (p->sclass == EXTERN || p->sclass == STATIC) && IR->stabsym)
-		(*IR->stabsym)(p);
-	else if ((p->sclass == TYPEDEF || p->sclass == 0) && IR->stabtype)
-		(*IR->stabtype)(p);
-}
-

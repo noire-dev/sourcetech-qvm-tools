@@ -14,7 +14,6 @@ static int oper[] = {
 float refinc = 1.0;
 static Tree expr2(void);
 static Tree expr3(int);
-static Tree nullcheck(Tree);
 static Tree postfix(Tree);
 static Tree unary(void);
 static Tree primary(void);
@@ -661,9 +660,6 @@ char *funcname(Tree f) {
 	if (isaddrop(f->op))
 		return stringf("`%s'", f->u.sym->name);
 	return "a function";
-}
-static Tree nullcheck(Tree p) {
-	return p;
 }
 Tree nullcall(Type pty, Symbol f, Tree p, Tree e) {
 	Type ty;

@@ -2,20 +2,10 @@
 
 static char rcsid[] = "main.c - faked rcsid";
 
-static void typestab(Symbol, void *);
-
-static void stabline(Coordinate *);
-static void stabend(Coordinate *, Symbol, Coordinate **, Symbol *, Symbol *);
 Interface *IR = NULL;
 
 int Aflag;		/* >= 0 if -A specified */
 
-static char *comment;
-static Interface stabIR;
-static char *currentfile;       /* current file name */
-static int currentline;		/* current line number */
-static FILE *srcfp;		/* stream for current file, if non-NULL */
-static int srcpos;		/* position of srcfp, if srcfp is non-NULL */
 int main(int argc, char *argv[]) {
 	int i, j;
 	for (i = argc - 1; i > 0; i--)
@@ -115,48 +105,4 @@ void main_init(int argc, char *argv[]) {
 		fprint(stderr, "%s: can't write `%s'\n", argv[0], outfile);
 		exit(EXIT_FAILURE);
 	}
-}
-/* typestab - emit stab entries for p */
-static void typestab(Symbol p, void *cl) {
-	if (*(Symbol *)cl == 0 && p->sclass && p->sclass != TYPEDEF)
-		*(Symbol *)cl = p;
-	if ((p->sclass == TYPEDEF || p->sclass == 0) && IR->stabtype)
-		(*IR->stabtype)(p);
-}
-
-/* stabline - emit source code for source coordinate *cp */
-static void stabline(Coordinate *cp) {
-	if (cp->file && cp->file != currentfile) {
-		if (srcfp)
-			fclose(srcfp);
-		currentfile = cp->file;
-		srcfp = fopen(currentfile, "r");
-		srcpos = 0;
-		currentline = 0;
-	}
-	if (currentline != cp->y && srcfp) {
-		char buf[512];
-		if (srcpos > cp->y) {
-			rewind(srcfp);
-			srcpos = 0;
-		}
-		for ( ; srcpos < cp->y; srcpos++)
-			if (fgets(buf, sizeof buf, srcfp) == NULL) {
-				fclose(srcfp);
-				srcfp = NULL;
-				break;
-			}
-		if (srcfp && srcpos == cp->y)
-			print("%s%s", comment, buf);
-	}
-	currentline = cp->y;
-	if (stabIR.stabline)
-		(*stabIR.stabline)(cp);
-}
-
-static void stabend(Coordinate *cp, Symbol p, Coordinate **cpp, Symbol *sp, Symbol *stab) {
-	if (stabIR.stabend)
-		(*stabIR.stabend)(cp, p, cpp, sp, stab);
-	if (srcfp)
-		fclose(srcfp);
 }

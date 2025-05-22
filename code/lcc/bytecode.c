@@ -62,10 +62,7 @@ int option(char *arg) {
 		com[0] = concat(&arg[9], "/rcc" BINEXT);
 	} else if (strcmp(arg, "-p") == 0 || strcmp(arg, "-pg") == 0) {
 		fprintf( stderr, "no profiling supported, %s ignored.\n", arg);
-	} else if (strcmp(arg, "-b") == 0)
-		;
-	else if (strcmp(arg, "-g") == 0)
-		fprintf( stderr, "no debugging supported, %s ignored.\n", arg);
+	} else if (strcmp(arg, "-b") == 0);
 	else if (strncmp(arg, "-ld=", 4) == 0 || strcmp(arg, "-static") == 0) {
 		fprintf( stderr, "no linking supported, %s ignored.\n", arg);
 	} else

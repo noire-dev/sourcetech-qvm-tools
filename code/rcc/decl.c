@@ -1057,10 +1057,8 @@ Type enumdcl(void) {
 	char *tag;
 	Type ty;
 	Symbol p = {0};
-	Coordinate pos;
 
 	t = gettok();
-	pos = src;
 	if (t == ID) {
 		tag = token;
 		t = gettok();
