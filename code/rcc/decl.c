@@ -882,14 +882,11 @@ static void checkref(Symbol p, void *cl) {
 		p->addressed = 1;
 	if (p->defined && p->ref == 0) {
 		if (p->sclass == STATIC)
-			warning("static `%t %s' is not referenced\n",
-				p->type, p->name);
-		else if (p->scope == PARAM)
-			warning("parameter `%t %s' is not referenced\n",
-				p->type, p->name);
+			warning("static `%t %s' is not referenced\n", p->type, p->name);
+		//else if (p->scope == PARAM)
+			//warning("parameter `%t %s' is not referenced\n", p->type, p->name);
 		else if (p->scope >= LOCAL && p->sclass != EXTERN)
-			warning("local `%t %s' is not referenced\n",
-				p->type, p->name);
+			warning("local `%t %s' is not referenced\n", p->type, p->name);
 	}
 	if (p->sclass == AUTO
 	&& ((p->scope  == PARAM && regcount == 0)
